@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Company } from '../types';
 import { Plus, Search, MapPin, Users, Building2, Trash2, Edit } from 'lucide-react';
+import { ConfirmModal } from './ConfirmModal';
 
 interface CompanyListProps {
   companies: Company[];
@@ -18,6 +19,7 @@ export const CompanyList: React.FC<CompanyListProps> = ({
   onDelete 
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
+  const [deleteId, setDeleteId] = useState<string | null>(null);
 
   const filteredCompanies = companies.filter(c => 
     c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -25,8 +27,32 @@ export const CompanyList: React.FC<CompanyListProps> = ({
     c.unit.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  const handleDeleteClick = (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    setDeleteId(id);
+  };
+
+  const confirmDelete = () => {
+    if (deleteId) {
+      onDelete(deleteId);
+      setDeleteId(null);
+    }
+  };
+
+  const getCompanyName = () => {
+    return companies.find(c => c.id === deleteId)?.name || 'esta empresa';
+  };
+
   return (
     <div className="space-y-6">
+      <ConfirmModal 
+        isOpen={!!deleteId}
+        title="Excluir Empresa"
+        message={`Tem certeza que deseja excluir as informações da empresa "${getCompanyName()}"? Essa ação não pode ser desfeita.`}
+        onConfirm={confirmDelete}
+        onCancel={() => setDeleteId(null)}
+      />
+
       <div className="flex flex-col md:flex-row gap-4 justify-between items-center bg-white p-4 rounded-lg shadow-sm border border-gray-100">
         <div className="relative w-full md:w-96">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
@@ -68,7 +94,7 @@ export const CompanyList: React.FC<CompanyListProps> = ({
                     <h3 className="font-bold text-lg text-slate-900 group-hover:text-red-600 transition-colors line-clamp-1">
                       {company.name}
                     </h3>
-                    <p className="text-sm text-gray-500 mt-1">CNPJ: {company.cnpj}</p>
+                    <p className="text-sm text-gray-500 mt-1">CNPJ: {company.cnpj || 'Não informado'}</p>
                   </div>
                   <div className="bg-red-50 p-2 rounded-full">
                     <Building2 className="w-5 h-5 text-red-600" />
@@ -93,19 +119,19 @@ export const CompanyList: React.FC<CompanyListProps> = ({
                 </span>
                 <div className="flex gap-2">
                   <button
-                    onClick={(e) => { e.stopPropagation(); onEdit(company); }}
+                    type="button"
+                    onClick={(e) => { 
+                      e.stopPropagation(); 
+                      onEdit(company); 
+                    }}
                     className="p-2 text-slate-600 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-colors"
                     title="Editar"
                   >
                     <Edit className="w-4 h-4" />
                   </button>
                   <button
-                    onClick={(e) => { 
-                      e.stopPropagation(); 
-                      if(confirm('Tem certeza que deseja excluir esta empresa?')) {
-                        onDelete(company.id);
-                      }
-                    }}
+                    type="button"
+                    onClick={(e) => handleDeleteClick(e, company.id)}
                     className="p-2 text-slate-600 hover:text-red-600 hover:bg-red-50 rounded-full transition-colors"
                     title="Excluir"
                   >

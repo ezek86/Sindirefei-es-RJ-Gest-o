@@ -1,3 +1,4 @@
+
 export interface SalaryFunction {
   id: string;
   role: string;
@@ -17,9 +18,9 @@ export interface CompanyBenefits {
   dentalPlan: boolean;
   dentalPlanOperator?: string; // Name of the operator
   mealVoucher: boolean; // Vale Refeição
-  mealVoucherValue?: number; // Value in R$
+  mealVoucherValue?: string; // Value in R$ or description
   groceryVoucher: boolean; // Vale Compras
-  groceryVoucherValue?: number; // Value in R$
+  groceryVoucherValue?: string; // Value in R$ or description
   shalomHealth: boolean;
   shalomClub: boolean;
   socialSupport: boolean; // Amparo Social

@@ -8,6 +8,8 @@ interface CompanyFormProps {
   onCancel: () => void;
 }
 
+const generateId = () => Date.now().toString(36) + Math.random().toString(36).substr(2);
+
 const emptyCompany: Company = {
   id: '',
   name: '',
@@ -23,9 +25,9 @@ const emptyCompany: Company = {
     dentalPlan: false,
     dentalPlanOperator: '',
     mealVoucher: false,
-    mealVoucherValue: 0,
+    mealVoucherValue: '',
     groceryVoucher: false,
-    groceryVoucherValue: 0,
+    groceryVoucherValue: '',
     shalomHealth: false,
     shalomClub: false,
     socialSupport: false,
@@ -48,7 +50,7 @@ export const CompanyForm: React.FC<CompanyFormProps> = ({ initialData, onSave, o
           benefits: { ...emptyCompany.benefits, ...initialData.benefits },
           unionContribution: { ...emptyCompany.unionContribution, ...(initialData.unionContribution || {}) }
         } 
-      : { ...emptyCompany, id: crypto.randomUUID() }
+      : { ...emptyCompany, id: generateId() }
   );
 
   const [newFunction, setNewFunction] = useState<SalaryFunction>({ id: '', role: '', salary: 0 });
@@ -79,17 +81,6 @@ export const CompanyForm: React.FC<CompanyFormProps> = ({ initialData, onSave, o
     }));
   };
 
-  const handleBenefitValueChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      benefits: {
-        ...prev.benefits,
-        [name]: parseFloat(value) || 0
-      }
-    }));
-  };
-
   const handleContributionChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target;
     setFormData(prev => ({
@@ -105,7 +96,7 @@ export const CompanyForm: React.FC<CompanyFormProps> = ({ initialData, onSave, o
     if (!newFunction.role) return;
     setFormData(prev => ({
       ...prev,
-      functions: [...prev.functions, { ...newFunction, id: crypto.randomUUID() }]
+      functions: [...prev.functions, { ...newFunction, id: generateId() }]
     }));
     setNewFunction({ id: '', role: '', salary: 0 });
   };
@@ -147,8 +138,8 @@ export const CompanyForm: React.FC<CompanyFormProps> = ({ initialData, onSave, o
               <input required name="name" value={formData.name} onChange={handleGeneralChange} className={inputClass} placeholder="Ex: Metalúrgica ABC" />
             </div>
             <div className="space-y-1">
-              <label className="text-sm font-medium text-gray-700">CNPJ *</label>
-              <input required name="cnpj" value={formData.cnpj} onChange={handleGeneralChange} className={inputClass} placeholder="00.000.000/0000-00" />
+              <label className="text-sm font-medium text-gray-700">CNPJ</label>
+              <input name="cnpj" value={formData.cnpj} onChange={handleGeneralChange} className={inputClass} placeholder="00.000.000/0000-00" />
             </div>
             <div className="space-y-1 md:col-span-2">
               <label className="text-sm font-medium text-gray-700">Endereço Completo</label>
@@ -341,15 +332,15 @@ export const CompanyForm: React.FC<CompanyFormProps> = ({ initialData, onSave, o
                   <span className="text-sm font-medium">Vale-refeição</span>
                 </label>
                 {formData.benefits.mealVoucher && (
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm text-gray-500">Valor R$:</span>
+                  <div className="flex items-center gap-2 flex-grow">
+                    <span className="text-sm text-gray-500 whitespace-nowrap">Valor/Desc:</span>
                     <input 
-                      type="number" 
+                      type="text" 
                       name="mealVoucherValue"
                       value={formData.benefits.mealVoucherValue || ''} 
-                      onChange={handleBenefitValueChange}
-                      className={`w-32 p-1.5 text-sm ${inputClass}`}
-                      placeholder="0.00"
+                      onChange={handleBenefitChange}
+                      className={`w-full p-1.5 text-sm ${inputClass}`}
+                      placeholder="Ex: 25.00 ou Refeição no local"
                     />
                   </div>
                 )}
@@ -364,15 +355,15 @@ export const CompanyForm: React.FC<CompanyFormProps> = ({ initialData, onSave, o
                   <span className="text-sm font-medium">Vale-compras</span>
                 </label>
                 {formData.benefits.groceryVoucher && (
-                   <div className="flex items-center gap-2">
-                   <span className="text-sm text-gray-500">Valor R$:</span>
+                   <div className="flex items-center gap-2 flex-grow">
+                   <span className="text-sm text-gray-500 whitespace-nowrap">Valor/Desc:</span>
                    <input 
-                     type="number" 
+                     type="text" 
                      name="groceryVoucherValue"
                      value={formData.benefits.groceryVoucherValue || ''} 
-                     onChange={handleBenefitValueChange}
-                     className={`w-32 p-1.5 text-sm ${inputClass}`}
-                     placeholder="0.00"
+                     onChange={handleBenefitChange}
+                     className={`w-full p-1.5 text-sm ${inputClass}`}
+                     placeholder="Ex: 200.00 ou Cesta Básica"
                    />
                  </div>
                 )}

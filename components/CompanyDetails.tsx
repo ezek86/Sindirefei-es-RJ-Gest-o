@@ -2,17 +2,22 @@ import React, { useState } from 'react';
 import { Company, Observation } from '../types';
 import { jsPDF } from 'jspdf';
 import { ArrowLeft, Edit, Download, Trash2, Calendar, MessageSquare, HandCoins } from 'lucide-react';
+import { ConfirmModal } from './ConfirmModal';
 
 interface CompanyDetailsProps {
   company: Company;
   onBack: () => void;
   onEdit: () => void;
   onUpdate: (updatedCompany: Company) => void;
+  onDelete: (id: string) => void;
 }
 
-export const CompanyDetails: React.FC<CompanyDetailsProps> = ({ company, onBack, onEdit, onUpdate }) => {
+const generateId = () => Date.now().toString(36) + Math.random().toString(36).substr(2);
+
+export const CompanyDetails: React.FC<CompanyDetailsProps> = ({ company, onBack, onEdit, onUpdate, onDelete }) => {
   const [newObs, setNewObs] = useState('');
   const [obsType, setObsType] = useState<Observation['type']>('geral');
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   const handleExportPDF = () => {
     const doc = new jsPDF();
@@ -25,7 +30,7 @@ export const CompanyDetails: React.FC<CompanyDetailsProps> = ({ company, onBack,
     doc.text(company.name, 10, 20);
     doc.setFontSize(10);
     doc.text(`Gerado em: ${new Date().toLocaleDateString()}`, 10, 30);
-    doc.text(`CNPJ: ${company.cnpj}`, 10, 35);
+    doc.text(`CNPJ: ${company.cnpj || 'Não informado'}`, 10, 35);
     doc.text(`Sindirefeições-RJ Gestão`, 10, 40);
 
     doc.setTextColor(0, 0, 0);
@@ -81,8 +86,8 @@ export const CompanyDetails: React.FC<CompanyDetailsProps> = ({ company, onBack,
     const benefitsList: string[] = [];
     if (b.healthPlan) benefitsList.push(`Plano de Saúde (${b.healthPlanOperator || 'Não informado'})`);
     if (b.dentalPlan) benefitsList.push(`Plano Odontológico (${b.dentalPlanOperator || 'Não informado'})`);
-    if (b.mealVoucher) benefitsList.push(`Vale Refeição (R$ ${b.mealVoucherValue?.toFixed(2) || '0.00'})`);
-    if (b.groceryVoucher) benefitsList.push(`Vale Compras (R$ ${b.groceryVoucherValue?.toFixed(2) || '0.00'})`);
+    if (b.mealVoucher) benefitsList.push(`Vale Refeição (${b.mealVoucherValue || 'Não informado'})`);
+    if (b.groceryVoucher) benefitsList.push(`Vale Compras (${b.groceryVoucherValue || 'Não informado'})`);
     if (b.shalomHealth) benefitsList.push('Shalom Saúde');
     if (b.shalomClub) benefitsList.push('Clube de Vantagens');
     if (b.socialSupport) benefitsList.push('Amparo Social');
@@ -109,7 +114,7 @@ export const CompanyDetails: React.FC<CompanyDetailsProps> = ({ company, onBack,
   const addObservation = () => {
     if (!newObs.trim()) return;
     const observation: Observation = {
-      id: crypto.randomUUID(),
+      id: generateId(),
       date: new Date().toISOString(),
       content: newObs,
       type: obsType
@@ -130,6 +135,10 @@ export const CompanyDetails: React.FC<CompanyDetailsProps> = ({ company, onBack,
     onUpdate(updatedCompany);
   };
 
+  const confirmDelete = () => {
+    onDelete(company.id);
+  };
+
   const BenefitItem = ({ label, detail }: { label: string, detail?: string }) => (
     <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg border border-gray-100">
       <span className="font-medium text-slate-700">{label}</span>
@@ -141,6 +150,14 @@ export const CompanyDetails: React.FC<CompanyDetailsProps> = ({ company, onBack,
 
   return (
     <div className="space-y-6 animate-fade-in">
+      <ConfirmModal 
+        isOpen={showDeleteModal}
+        title="Excluir Empresa"
+        message={`Tem certeza que deseja excluir as informações da empresa "${company.name}"? Essa ação não pode ser desfeita.`}
+        onConfirm={confirmDelete}
+        onCancel={() => setShowDeleteModal(false)}
+      />
+
       {/* Header Actions */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <button onClick={onBack} className="flex items-center text-gray-600 hover:text-slate-900 transition-colors">
@@ -148,6 +165,10 @@ export const CompanyDetails: React.FC<CompanyDetailsProps> = ({ company, onBack,
           Voltar para lista
         </button>
         <div className="flex gap-3">
+          <button onClick={() => setShowDeleteModal(true)} className="flex items-center gap-2 px-4 py-2 border border-red-200 text-red-600 bg-white rounded-lg hover:bg-red-50 transition-colors">
+            <Trash2 className="w-4 h-4" />
+            Excluir
+          </button>
           <button onClick={handleExportPDF} className="flex items-center gap-2 px-4 py-2 border border-slate-300 rounded-lg text-slate-700 hover:bg-slate-50 transition-colors bg-white">
             <Download className="w-4 h-4" />
             Exportar PDF
@@ -167,7 +188,7 @@ export const CompanyDetails: React.FC<CompanyDetailsProps> = ({ company, onBack,
           <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
             <h1 className="text-3xl font-bold text-slate-900 mb-2">{company.name}</h1>
             <div className="flex flex-wrap gap-4 text-sm text-gray-600 mb-6">
-              <span className="bg-gray-100 px-3 py-1 rounded-full">CNPJ: {company.cnpj}</span>
+              <span className="bg-gray-100 px-3 py-1 rounded-full">CNPJ: {company.cnpj || 'Não informado'}</span>
               <span className="bg-gray-100 px-3 py-1 rounded-full flex items-center gap-1">
                 <Calendar className="w-3 h-3" /> Atualizado: {new Date(company.lastUpdated).toLocaleDateString()}
               </span>
@@ -247,10 +268,10 @@ export const CompanyDetails: React.FC<CompanyDetailsProps> = ({ company, onBack,
                 <BenefitItem label="Plano Odontológico" detail={company.benefits.dentalPlanOperator} />
               )}
               {company.benefits.mealVoucher && (
-                <BenefitItem label="Vale Refeição" detail={`R$ ${company.benefits.mealVoucherValue?.toFixed(2) || '0.00'}`} />
+                <BenefitItem label="Vale Refeição" detail={company.benefits.mealVoucherValue} />
               )}
               {company.benefits.groceryVoucher && (
-                <BenefitItem label="Vale Compras" detail={`R$ ${company.benefits.groceryVoucherValue?.toFixed(2) || '0.00'}`} />
+                <BenefitItem label="Vale Compras" detail={company.benefits.groceryVoucherValue} />
               )}
               {company.benefits.shalomHealth && (
                 <BenefitItem label="Shalom Saúde" />
